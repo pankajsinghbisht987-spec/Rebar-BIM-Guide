@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RebarBIM · Interview Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0b0f1a;
+  --surface:  #111827;
+  --surface2: #1c2333;
+  --surface3: #243047;
+  --border:   #2a3a52;
+  --red:      #e05c4b;
+  --amber:    #f5a623;
+  --green:    #3ecf8e;
+  --blue:     #4d9ef7;
+  --text:     #e2e8f0;
+  --muted:    #7c8fa8;
+  --mono:     'JetBrains Mono', monospace;
+  --sans:     'Syne', sans-serif;
+  --sidebar:  260px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  display:flex;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ─── SIDEBAR ─── */
+.sidebar{
+  width:var(--sidebar);
+  min-height:100vh;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  position:fixed;
+  top:0;left:0;
+  display:flex;flex-direction:column;
+  z-index:200;
+  transition:transform 0.3s;
+}
+.sidebar-logo{
+  padding:24px 20px 20px;
+  border-bottom:1px solid var(--border);
+}
+.logo-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:linear-gradient(135deg,var(--red),#c0392b);
+  padding:6px 12px;border-radius:4px;
+  font-family:var(--mono);font-size:11px;
+  letter-spacing:2px;color:#fff;font-weight:600;
+  margin-bottom:10px;
+}
+.logo-title{
+  font-size:18px;font-weight:800;
+  color:var(--text);line-height:1.2;
+}
+.logo-sub{
+  font-family:var(--mono);font-size:10px;
+  color:var(--muted);margin-top:4px;letter-spacing:1px;
+}
+.sidebar-search{
+  padding:16px 16px 12px;
+  border-bottom:1px solid var(--border);
+}
+.search-wrap{
+  position:relative;
+}
+.search-wrap input{
+  width:100%;background:var(--surface2);
+  border:1px solid var(--border);border-radius:6px;
+  padding:9px 12px 9px 34px;
+  font-family:var(--mono);font-size:12px;color:var(--text);
+  outline:none;transition:border-color 0.2s;
+}
+.search-wrap input:focus{border-color:var(--red);}
+.search-wrap input::placeholder{color:var(--muted);}
+.search-icon{
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-size:13px;pointer-events:none;
+}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto;}
+.nav-section-label{
+  font-family:var(--mono);font-size:9px;
+  letter-spacing:2px;color:var(--muted);
+  padding:8px 20px 4px;text-transform:uppercase;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 20px;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--muted);
+  transition:all 0.15s;border-left:3px solid transparent;
+  position:relative;
+}
+.nav-item:hover{color:var(--text);background:var(--surface2);}
+.nav-item.active{color:var(--red);border-left-color:var(--red);background:rgba(224,92,75,0.08);}
+.nav-item .nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-count{
+  margin-left:auto;
+  font-family:var(--mono);font-size:10px;
+  background:var(--surface3);padding:2px 7px;
+  border-radius:10px;color:var(--muted);
+}
+.nav-item.active .nav-count{background:rgba(224,92,75,0.2);color:var(--red);}
+.sidebar-footer{
+  padding:16px 20px;border-top:1px solid var(--border);
+  font-family:var(--mono);font-size:10px;color:var(--muted);
+}
+.last-updated{
+  display:flex;align-items:center;gap:6px;margin-bottom:4px;
+}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* ─── MAIN ─── */
+.main{
+  margin-left:var(--sidebar);
+  flex:1;min-height:100vh;
+  display:flex;flex-direction:column;
+}
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(11,15,26,0.85);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:14px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.topbar-title{
+  font-size:15px;font-weight:700;color:var(--text);
+}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.progress-pill{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1px solid var(--border);
+  padding:6px 14px;border-radius:20px;
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+}
+.progress-pill span{color:var(--green);font-weight:600;}
+.burger{display:none;background:none;border:none;cursor:pointer;color:var(--text);font-size:20px;}
+
+/* ─── PAGE SECTIONS ─── */
+.page{display:none;padding:36px 32px;animation:fadeUp 0.3s ease;}
+.page.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── HOME PAGE ─── */
+.home-hero{
+  background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);
+  border:1px solid var(--border);border-radius:12px;
+  padding:40px;margin-bottom:28px;position:relative;overflow:hidden;
+}
+.home-hero::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    repeating-linear-gradient(0deg,transparent,transparent 29px,rgba(224,92,75,0.06) 29px,rgba(224,92,75,0.06) 30px),
+    repeating-linear-gradient(90deg,transparent,transparent 29px,rgba(224,92,75,0.06) 29px,rgba(224,92,75,0.06) 30px);
+  pointer-events:none;
+}
+.hero-tag{
+  font-family:var(--mono);font-size:10px;letter-spacing:3px;
+  color:var(--red);text-transform:uppercase;margin-bottom:14px;
+}
+.hero-h1{
+  font-size:clamp(32px,4vw,54px);font-weight:800;
+  line-height:1.05;color:var(--text);margin-bottom:14px;
+}
+.hero-h1 em{color:var(--red);font-style:normal;}
+.hero-desc{
+  font-family:var(--mono);font-size:12px;color:var(--muted);
+  max-width:500px;line-height:1.8;
+}
+.hero-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;}
+.htag{
+  background:rgba(224,92,75,0.1);border:1px solid rgba(224,92,75,0.3);
+  color:var(--amber);padding:4px 12px;border-radius:3px;
+  font-family:var(--mono);font-size:10px;letter-spacing:1px;
+}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px;}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:22px 24px;
+  border-top:3px solid var(--red);
+  transition:transform 0.2s,border-color 0.2s;
+}
+.stat-card:hover{transform:translateY(-2px);border-color:var(--amber);}
+.stat-card:nth-child(2){border-top-color:var(--amber);}
+.stat-card:nth-child(3){border-top-color:var(--green);}
+.stat-card:nth-child(4){border-top-color:var(--blue);}
+.stat-num{
+  font-size:38px;font-weight:800;color:var(--text);
+  line-height:1;margin-bottom:6px;
+}
+.stat-label{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:1px;}
+
+/* Quick nav cards */
+.quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;}
+.quick-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:22px;cursor:pointer;
+  transition:all 0.2s;position:relative;overflow:hidden;
+}
+.quick-card::after{
+  content:'→';position:absolute;right:18px;top:50%;
+  transform:translateY(-50%) translateX(4px);
+  color:var(--muted);font-size:18px;
+  transition:all 0.2s;opacity:0;
+}
+.quick-card:hover{border-color:var(--red);background:var(--surface2);}
+.quick-card:hover::after{opacity:1;transform:translateY(-50%) translateX(0);}
+.qc-icon{font-size:28px;margin-bottom:12px;}
+.qc-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.qc-desc{font-family:var(--mono);font-size:11px;color:var(--muted);}
+
+/* ─── SECTION HEADER ─── */
+.sec-header{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  margin-bottom:28px;flex-wrap:wrap;gap:12px;
+}
+.sec-title-wrap{}
+.sec-eyebrow{
+  font-family:var(--mono);font-size:10px;letter-spacing:2px;
+  color:var(--red);text-transform:uppercase;margin-bottom:6px;
+}
+.sec-h2{font-size:28px;font-weight:800;color:var(--text);}
+.sec-h2 span{color:var(--red);}
+
+/* ─── FILTER BAR ─── */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;}
+.filter-btn{
+  padding:6px 16px;border-radius:4px;cursor:pointer;
+  font-family:var(--mono);font-size:11px;letter-spacing:1px;
+  border:1px solid var(--border);background:var(--surface2);color:var(--muted);
+  transition:all 0.2s;
+}
+.filter-btn:hover{border-color:var(--muted);color:var(--text);}
+.filter-btn.active{background:rgba(224,92,75,0.15);border-color:var(--red);color:var(--red);}
+.filter-btn.easy.active{background:rgba(62,207,142,0.1);border-color:var(--green);color:var(--green);}
+.filter-btn.med.active{background:rgba(245,166,35,0.1);border-color:var(--amber);color:var(--amber);}
+.filter-btn.hard.active{background:rgba(224,92,75,0.1);border-color:var(--red);color:var(--red);}
+
+/* ─── Q&A CARDS ─── */
+.qa-list{display:flex;flex-direction:column;gap:12px;}
+.qa-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;overflow:hidden;
+  transition:border-color 0.2s;
+}
+.qa-card:hover{border-color:var(--surface3);}
+.qa-card.done{border-left:4px solid var(--green);}
+.qa-head{
+  display:flex;align-items:center;gap:14px;
+  padding:18px 20px;cursor:pointer;user-select:none;
+}
+.qnum{
+  font-family:var(--mono);font-size:10px;color:var(--red);
+  background:rgba(224,92,75,0.1);border:1px solid rgba(224,92,75,0.25);
+  padding:3px 8px;border-radius:3px;flex-shrink:0;white-space:nowrap;
+}
+.qtxt{flex:1;font-size:14px;font-weight:600;color:var(--text);}
+.badges{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.badge{
+  font-family:var(--mono);font-size:9px;padding:2px 8px;
+  border-radius:2px;letter-spacing:1px;
+}
+.badge-easy{background:rgba(62,207,142,0.1);color:var(--green);border:1px solid rgba(62,207,142,0.3);}
+.badge-med{background:rgba(245,166,35,0.1);color:var(--amber);border:1px solid rgba(245,166,35,0.3);}
+.badge-hard{background:rgba(224,92,75,0.1);color:var(--red);border:1px solid rgba(224,92,75,0.3);}
+.check-btn{
+  width:22px;height:22px;border-radius:50%;
+  border:2px solid var(--border);background:transparent;
+  cursor:pointer;flex-shrink:0;transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:transparent;
+}
+.qa-card.done .check-btn{background:var(--green);border-color:var(--green);color:#fff;}
+.toggle-btn{
+  color:var(--muted);font-size:18px;flex-shrink:0;
+  transition:transform 0.3s;font-family:var(--mono);
+}
+.qa-card.open .toggle-btn{transform:rotate(45deg);color:var(--amber);}
+.qa-body{
+  display:none;padding:0 20px 20px 20px;
+  font-family:var(--mono);font-size:12px;color:#9ab;line-height:1.9;
+  border-top:1px solid var(--border);padding-top:16px;
+  margin:0 20px;
+}
+.qa-card.open .qa-body{display:block;}
+.tip{
+  background:rgba(62,207,142,0.06);border-left:3px solid var(--green);
+  padding:10px 14px;margin-top:14px;border-radius:0 4px 4px 0;
+  font-size:11px;color:#6dbf9e;
+}
+.code{
+  font-family:var(--mono);font-size:11px;
+  background:rgba(77,158,247,0.1);border:1px solid rgba(77,158,247,0.2);
+  color:var(--blue);padding:1px 6px;border-radius:3px;display:inline;
+}
+
+/* ─── DIAGRAMS ─── */
+.diag-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;}
+.diag-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:22px;
+}
+.diag-label{
+  font-family:var(--mono);font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--amber);margin-bottom:14px;
+  display:flex;align-items:center;gap:10px;
+}
+.diag-label::after{content:'';flex:1;height:1px;background:var(--border);}
+svg text{font-family:var(--mono)!important;}
+
+/* ─── TABLES ─── */
+.tbl-wrap{overflow-x:auto;margin-bottom:32px;}
+.tbl-title{
+  font-family:var(--mono);font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--amber);
+  display:flex;align-items:center;gap:10px;margin-bottom:14px;
+}
+.tbl-title::after{content:'';flex:1;height:1px;background:var(--border);}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;}
+th{
+  background:rgba(224,92,75,0.12);color:var(--amber);
+  padding:10px 14px;text-align:left;
+  letter-spacing:1px;border:1px solid var(--border);
+}
+td{padding:9px 14px;border:1px solid var(--border);color:#9ab;vertical-align:top;}
+tr:nth-child(even) td{background:rgba(255,255,255,0.02);}
+tr:hover td{background:rgba(224,92,75,0.05);}
+
+/* ─── GLOSSARY ─── */
+.gloss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.gloss-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-top:3px solid var(--red);border-radius:6px;
+  padding:16px 18px;
+}
+.gloss-term{font-family:var(--mono);font-size:12px;color:var(--amber);font-weight:600;margin-bottom:6px;}
+.gloss-def{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.7;}
+
+/* ─── WORKFLOW ─── */
+.wf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:32px;}
+.wf-step{
+  padding:22px 20px;background:var(--surface);
+  border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  transition:background 0.2s;
+}
+.wf-step:hover{background:var(--surface2);}
+.wf-n{font-size:36px;font-weight:800;color:rgba(224,92,75,0.2);line-height:1;margin-bottom:8px;}
+.wf-label{font-family:var(--mono);font-size:10px;color:var(--amber);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.wf-desc{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.7;}
+
+/* ─── SEARCH RESULTS OVERLAY ─── */
+.search-results{
+  display:none;
+  position:fixed;top:0;left:var(--sidebar);right:0;bottom:0;
+  background:rgba(11,15,26,0.96);z-index:300;
+  padding:40px 32px;overflow-y:auto;
+}
+.search-results.show{display:block;}
+.sr-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;
+}
+.sr-title{font-size:18px;font-weight:700;}
+.sr-close{
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);padding:8px 16px;border-radius:6px;
+  cursor:pointer;font-family:var(--mono);font-size:12px;
+}
+.sr-item{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:16px 20px;margin-bottom:10px;
+  cursor:pointer;transition:border-color 0.2s;
+}
+.sr-item:hover{border-color:var(--red);}
+.sr-q{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.sr-ctx{font-family:var(--mono);font-size:11px;color:var(--muted);}
+.sr-empty{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:center;margin-top:60px;}
+
+/* ─── MOBILE ─── */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);}
+  .sidebar.open{transform:translateX(0);}
+  .main{margin-left:0;}
+  .burger{display:block;}
+  .search-results{left:0;}
+  .page{padding:24px 16px;}
+  .home-hero{padding:24px;}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-badge">⬡ REBARBIM</div>
+    <div class="logo-title">Interview<br>Dashboard</div>
+    <div class="logo-sub">// STRUCTURAL BIM GUIDE</div>
+  </div>
+  <div class="sidebar-search">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="searchInput" placeholder="Search questions..." oninput="handleSearch(this.value)">
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="showPage('home',this)">
+      <span class="nav-icon">⊞</span> Dashboard
+    </div>
+    <div class="nav-section-label">Questions</div>
+    <div class="nav-item" onclick="showPage('basics',this)">
+      <span class="nav-icon">◈</span> Basics
+      <span class="nav-count">6</span>
+    </div>
+    <div class="nav-item" onclick="showPage('detailing',this)">
+      <span class="nav-icon">◉</span> Rebar Detailing
+      <span class="nav-count">6</span>
+    </div>
+    <div class="nav-item" onclick="showPage('bim',this)">
+      <span class="nav-icon">⬡</span> BIM Workflow
+      <span class="nav-count">3</span>
+    </div>
+    <div class="nav-item" onclick="showPage('software',this)">
+      <span class="nav-icon">⌥</span> Software Q&A
+      <span class="nav-count">5</span>
+    </div>
+    <div class="nav-section-label">Reference</div>
+    <div class="nav-item" onclick="showPage('diagrams',this)">
+      <span class="nav-icon">◫</span> Diagrams
+    </div>
+    <div class="nav-item" onclick="showPage('tables',this)">
+      <span class="nav-icon">≡</span> Data Tables
+    </div>
+    <div class="nav-item" onclick="showPage('glossary',this)">
+      <span class="nav-icon">α</span> Glossary
+      <span class="nav-count">18</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="last-updated">
+      <div class="dot"></div>
+      <span>Updated <span id="lastUpdated">—</span></span>
+    </div>
+    <div>RebarBIM Dashboard v1.0</div>
+  </div>
+</aside>
+
+<!-- SEARCH RESULTS OVERLAY -->
+<div class="search-results" id="searchResults">
+  <div class="sr-header">
+    <div class="sr-title">Search Results</div>
+    <button class="sr-close" onclick="closeSearch()">✕ Close</button>
+  </div>
+  <div id="srBody"></div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="burger" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    </div>
+    <div class="topbar-right">
+      <div class="progress-pill">
+        Studied: <span id="progressCount">0</span> / 20 questions
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ HOME ═══ -->
+  <div class="page active" id="page-home">
+    <div class="home-hero">
+      <div class="hero-tag">// Technical Interview Reference · 2025</div>
+      <h1 class="hero-h1">Rebar Detail<br>&amp; <em>BIM Modeling</em></h1>
+      <p class="hero-desc">Complete interview preparation guide for structural BIM engineers and rebar detailers. Track your progress, study questions, reference diagrams and data tables.</p>
+      <div class="hero-tags">
+        <span class="htag">REVIT STRUCTURE</span>
+        <span class="htag">TEKLA STRUCTURES</span>
+        <span class="htag">IFC / LOD</span>
+        <span class="htag">REBAR DETAILING</span>
+        <span class="htag">ACI 318 / IS 456</span>
+        <span class="htag">BVBS / CNC</span>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-num">20</div>
+        <div class="stat-label">TOTAL QUESTIONS</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">6</div>
+        <div class="stat-label">SVG DIAGRAMS</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="studiedStat">0</div>
+        <div class="stat-label">QUESTIONS STUDIED</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">18</div>
+        <div class="stat-label">GLOSSARY TERMS</div>
+      </div>
+    </div>
+
+    <div class="sec-header">
+      <div class="sec-title-wrap">
+        <div class="sec-eyebrow">// Jump to section</div>
+        <h2 class="sec-h2">Quick <span>Navigation</span></h2>
+      </div>
+    </div>
+    <div class="quick-grid">
+      <div class="quick-card" onclick="showPage('basics',null)">
+        <div class="qc-icon">◈</div>
+        <div class="qc-title">Foundational Basics</div>
+        <div class="qc-desc">Rebar, cover, development length, grades, BBS</div>
+      </div>
+      <div class="quick-card" onclick="showPage('detailing',null)">
+        <div class="qc-icon">◉</div>
+        <div class="qc-title">Rebar Detailing</div>
+        <div class="qc-desc">Laps, hooks, curtailment, joints, steel ratios</div>
+      </div>
+      <div class="quick-card" onclick="showPage('bim',null)">
+        <div class="qc-icon">⬡</div>
+        <div class="qc-title">BIM Workflow</div>
+        <div class="qc-desc">LOD levels, IFC, clash detection, 7-stage process</div>
+      </div>
+      <div class="quick-card" onclick="showPage('software',null)">
+        <div class="qc-icon">⌥</div>
+        <div class="qc-title">Software Q&A</div>
+        <div class="qc-desc">Revit tools, Tekla vs Revit, ETABS link, BVBS</div>
+      </div>
+      <div class="quick-card" onclick="showPage('diagrams',null)">
+        <div class="qc-icon">◫</div>
+        <div class="qc-title">Visual Diagrams</div>
+        <div class="qc-desc">Beam sections, slab layout, LOD chart, ecosystem</div>
+      </div>
+      <div class="quick-card" onclick="showPage('tables',null)">
+        <div class="qc-icon">≡</div>
+        <div class="qc-title">Reference Tables</div>
+        <div class="qc-desc">Bar sizes, cover requirements, shape codes, dev. length</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ BASICS ═══ -->
+  <div class="page" id="page-basics">
+    <div class="sec-header">
+      <div class="sec-title-wrap">
+        <div class="sec-eyebrow">// Section 01</div>
+        <h2 class="sec-h2">Foundational <span>Concepts</span></h2>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterCards(this,'all')">All</button>
+      <button class="filter-btn easy" onclick="filterCards(this,'easy')">Easy</button>
+      <button class="filter-btn med" onclick="filterCards(this,'med')">Medium</button>
+      <button class="filter-btn hard" onclick="filterCards(this,'hard')">Advanced</button>
+    </div>
+    <div class="qa-list" id="basics-list">
+
+      <div class="qa-card" data-diff="easy" data-id="q01" data-section="Basics" data-question="What is rebar and why is it used in concrete?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 01</span>
+          <span class="qtxt">What is rebar (reinforcing bar) and why is it used in concrete?</span>
+          <div class="badges"><span class="badge badge-easy">EASY</span></div>
+          <button class="check-btn" onclick="markDone(event,'q01')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          Rebar (reinforcing steel bar) is deformed or plain steel embedded in concrete to compensate for concrete's very low tensile and shear strength. Concrete handles compression well (~30 MPa typical) but fails in tension at roughly 1/10 that value. Steel rebars positioned in tension zones carry these forces, creating a composite "reinforced concrete" member that handles both compression and tension.<br><br>
+          Key benefits: improved ductility, crack control, load redistribution, resistance to seismic and dynamic forces.
+          <div class="tip">💡 INTERVIEW TIP — mention bond strength between rebar and concrete (achieved via deformations/ribs), and that rebar must have adequate concrete cover for fire and corrosion protection.</div>
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="easy" data-id="q02" data-section="Basics" data-question="Explain the difference between main bars, distribution bars, and stirrups/ties.">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 02</span>
+          <span class="qtxt">Explain the difference between main bars, distribution bars, and stirrups/ties.</span>
+          <div class="badges"><span class="badge badge-easy">EASY</span></div>
+          <button class="check-btn" onclick="markDone(event,'q02')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          <b>Main bars (longitudinal / primary reinforcement):</b> Placed parallel to the span to resist primary bending/tension. Sized and spaced by structural design.<br><br>
+          <b>Distribution bars (secondary / transverse):</b> Placed perpendicular to main bars in slabs to distribute loads, control shrinkage, and hold main bars in position during casting.<br><br>
+          <b>Stirrups / links (beams) / ties (columns):</b> Closed or open loops of smaller-diameter bar placed transversely. They resist shear forces, prevent buckling of longitudinal bars, and confine the concrete core.
+          <div class="tip">💡 Stirrups are typically bent at 135° hooks per seismic code (ACI 318, IS 13920, EC2). Mention this in seismic-region contexts.</div>
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="easy" data-id="q03" data-section="Basics" data-question="What is concrete cover and why is it critical?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 03</span>
+          <span class="qtxt">What is concrete cover and why is it critical?</span>
+          <div class="badges"><span class="badge badge-easy">EASY</span></div>
+          <button class="check-btn" onclick="markDone(event,'q03')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          Concrete cover is the minimum distance between the outermost surface of rebar and the nearest concrete face. It serves three main purposes:<br><br>
+          1. <b>Corrosion protection</b> — prevents moisture and chlorides reaching steel.<br>
+          2. <b>Fire resistance</b> — delays heat transfer to rebar (which loses strength above ~400°C).<br>
+          3. <b>Bond development</b> — ensures adequate bond length between bar and concrete.<br><br>
+          Typical values: 25 mm (internal slabs), 30–40 mm (beams/columns), 50+ mm (foundations, exposed marine).
+          <div class="tip">💡 Cover is measured to the STIRRUP, not the main bar. In BIM, cover settings are entered per member type and drive rebar placement automatically.</div>
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="med" data-id="q04" data-section="Basics" data-question="What is development length (anchorage length) and how is it calculated?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 04</span>
+          <span class="qtxt">What is development length (anchorage length) and how is it calculated?</span>
+          <div class="badges"><span class="badge badge-med">MEDIUM</span></div>
+          <button class="check-btn" onclick="markDone(event,'q04')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          Development length (Ld) is the minimum embedment of a rebar required to transfer the full design force from steel to surrounding concrete through bond stress.<br><br>
+          Per ACI 318: <span class="code">Ld = (fy × ψt × ψe × ψs) / (20λ√f'c) × db</span><br>
+          Where ψ = modification factors for bar position, coating, size; λ = lightweight concrete factor; db = bar diameter.<br><br>
+          Simplified rule of thumb: <span class="code">Ld ≈ 40–50 × db</span> for typical Fe500 bars in M25 concrete.<br><br>
+          In Tekla / Revit, development length is often input as a multiplier or looked up from reinforcement schedules tied to material properties.
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="easy" data-id="q05" data-section="Basics" data-question="What are the common rebar grades and designations?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 05</span>
+          <span class="qtxt">What are the common rebar grades and designations?</span>
+          <div class="badges"><span class="badge badge-easy">EASY</span></div>
+          <button class="check-btn" onclick="markDone(event,'q05')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          <b>IS 1786 (India):</b> Fe250 (mild steel), Fe415, Fe500, Fe500D, Fe550D (D = ductile)<br>
+          <b>ASTM (USA):</b> Grade 40, 60, 80, 100 (yield in ksi). Common: Gr. 60 (fy = 420 MPa)<br>
+          <b>BS/EC2 (UK/Europe):</b> B500A, B500B, B500C (C = high ductility for seismic)<br>
+          <b>Diameter series (India):</b> 6, 8, 10, 12, 16, 20, 25, 28, 32, 36, 40 mm<br><br>
+          In BIM models, bar grade links to the <span class="code">RebarBarType</span> property, which controls yield strength used in clash and code-check add-ins.
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="med" data-id="q06" data-section="Basics" data-question="What is a Bar Bending Schedule (BBS) and what information does it contain?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 06</span>
+          <span class="qtxt">What is a Bar Bending Schedule (BBS) and what information does it contain?</span>
+          <div class="badges"><span class="badge badge-med">MEDIUM</span></div>
+          <button class="check-btn" onclick="markDone(event,'q06')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          A Bar Bending Schedule (BBS) is a tabular document listing all reinforcement bars for a structural member with complete information for cutting and bending on-site or in a prefab shop.<br><br>
+          Each row contains: Bar mark, Diameter, Shape code, Number of bars, Length of each bar, Bending dimensions (a, b, c, d, e), Total length per bar, Total weight.<br><br>
+          Shapes reference standard codes — SP:34 (India), BS 8666 (UK).<br><br>
+          In BIM, BBS is auto-generated from the 3D rebar model using schedules/reports in Revit or Tekla, eliminating manual takeoffs and reducing errors.
+          <div class="tip">💡 Mention that BIM-generated BBS can be shared directly with fabricators via IFC or BVBS format for CNC bending machines — a key LOD 400 deliverable.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ DETAILING ═══ -->
+  <div class="page" id="page-detailing">
+    <div class="sec-header">
+      <div class="sec-title-wrap">
+        <div class="sec-eyebrow">// Section 02</div>
+        <h2 class="sec-h2">Rebar <span>Detailing</span></h2>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterCards(this,'all')">All</button>
+      <button class="filter-btn easy" onclick="filterCards(this,'easy')">Easy</button>
+      <button class="filter-btn med" onclick="filterCards(this,'med')">Medium</button>
+      <button class="filter-btn hard" onclick="filterCards(this,'hard')">Advanced</button>
+    </div>
+    <div class="qa-list" id="detailing-list">
+
+      <div class="qa-card" data-diff="med" data-id="q10" data-section="Detailing" data-question="How is lap length (splice length) determined and where should splices be located?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 10</span>
+          <span class="qtxt">How is lap length (splice length) determined and where should splices be located?</span>
+          <div class="badges"><span class="badge badge-med">MEDIUM</span></div>
+          <button class="check-btn" onclick="markDone(event,'q10')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          Lap length is the length over which two bars overlap to transfer forces through bond. Typically expressed as a multiple of bar diameter:<br><br>
+          <b>Tension lap:</b> 1.3 × Ld (≈ 50–60 db for typical concrete strengths)<br>
+          <b>Compression lap:</b> Ld (≈ 40–45 db)<br><br>
+          Lap location rules:<br>
+          — Avoid high-stress zones (mid-span for sagging beams, column mid-height).<br>
+          — Stagger laps: no more than 50% of bars should be lapped at any cross-section.<br>
+          — Keep laps away from high shear zones and corners in columns.<br><br>
+          In BIM, lap length is entered as a parameter in rebar placement dialogs and can be formula-driven from material properties.
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="easy" data-id="q11" data-section="Detailing" data-question="What are standard hook and bend types, and when are they used?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 11</span>
+          <span class="qtxt">What are standard hook and bend types, and when are they used?</span>
+          <div class="badges"><span class="badge badge-easy">EASY</span></div>
+          <button class="check-btn" onclick="markDone(event,'q11')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          Standard hooks provide anchorage where straight development length is not available:<br><br>
+          <b>Standard 180° hook:</b> Full semicircle + 4db straight extension. Maximum anchorage.<br>
+          <b>90° hook:</b> Right-angle bend + 12db extension. Common in stirrups and ties.<br>
+          <b>135° hook (seismic):</b> Required for stirrup ends in seismic zones per ACI 318 to prevent opening under cyclic loads.<br>
+          <b>Cranked bars:</b> Bars bent diagonally to shift from bottom to top zone at supports in slabs.<br><br>
+          Minimum bend diameter: 4db for ≤16mm bars, 6db for >16mm (BS); 6db for standard hooks (ACI).<br><br>
+          In BIM, hooks are assigned via <span class="code">RebarHookType</span> on bar ends. Tekla has a built-in hook library with angle, radius, and extension parameters.
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="easy" data-id="q12" data-section="Detailing" data-question="What is minimum clear spacing between bars and why does it matter?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 12</span>
+          <span class="qtxt">What is minimum clear spacing between bars and why does it matter?</span>
+          <div class="badges"><span class="badge badge-easy">EASY</span></div>
+          <button class="check-btn" onclick="markDone(event,'q12')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          Minimum clear spacing ensures concrete can flow around bars during casting (compaction and vibration access).<br><br>
+          Per ACI 318-19: clear spacing ≥ max(db, 25 mm, 4/3 × aggregate size)<br>
+          Per IS 456: clear spacing ≥ max(diameter of bar, 5 mm + nominal aggregate size)<br><br>
+          Too tight spacing causes: honeycomb voids, poor bond, reduced durability.<br><br>
+          In congested areas (beam-column joints, pile caps), smaller-diameter bars in multiple layers or high-strength bars are preferred to maintain adequate spacing.
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="hard" data-id="q13" data-section="Detailing" data-question="How do you detail reinforcement at a beam-column joint?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 13</span>
+          <span class="qtxt">How do you detail reinforcement at a beam-column joint?</span>
+          <div class="badges"><span class="badge badge-hard">ADVANCED</span></div>
+          <button class="check-btn" onclick="markDone(event,'q13')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          Beam-column joints are the most congested and critical zones in RC frames:<br><br>
+          <b>Column bars:</b> Continue through joint with no splice inside joint zone.<br>
+          <b>Beam bars:</b> Pass through or are hooked within the column core. Straight bars require adequate column depth (≥ 20–25 db). Hooks used when column depth is insufficient.<br>
+          <b>Joint stirrups:</b> Horizontal ties at close spacing within the joint panel provide confinement and shear resistance.<br>
+          <b>Bar arrangement:</b> Offset beam bars if needed to maintain column bar positions. Stagger bar layers.<br><br>
+          In BIM: use Tekla's connection component tools or Revit's custom rebar host approach. Model the joint with full clash checking — one area where BIM coordination adds enormous value over 2D detailing.
+          <div class="tip">💡 Reference ACI 318-19 Chapter 15 or IS 13920 for seismic joint detailing requirements.</div>
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="med" data-id="q14" data-section="Detailing" data-question="What is minimum and maximum steel ratio in beams and slabs?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 14</span>
+          <span class="qtxt">What is minimum and maximum steel ratio in beams and slabs?</span>
+          <div class="badges"><span class="badge badge-med">MEDIUM</span></div>
+          <button class="check-btn" onclick="markDone(event,'q14')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          <b>Minimum steel (As,min):</b> Prevents sudden brittle failure when concrete cracks. Ensures ductility.<br>
+          ACI 318: As,min = max(0.25√f'c/fy × bw × d, 1.4/fy × bw × d)<br>
+          IS 456: Ast,min = 0.85 × bw × d / fy (beams); 0.12% bD (slabs with Fe415)<br><br>
+          <b>Maximum steel (As,max):</b> Prevents over-reinforced (brittle concrete crushing) failure.<br>
+          ACI 318: Net tensile strain ε_t ≥ 0.004 controls; practically As,max ≈ 0.75 × balanced ratio<br>
+          IS 456: Ast,max = 4% of gross cross-section area<br><br>
+          Always verify both limits — too little steel: sudden failure at first crack; too much: concrete crushes before steel yields.
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="hard" data-id="q15" data-section="Detailing" data-question="Explain the concept of curtailment (cut-off points) for beam bars.">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 15</span>
+          <span class="qtxt">Explain the concept of curtailment (cut-off points) for beam bars.</span>
+          <div class="badges"><span class="badge badge-hard">ADVANCED</span></div>
+          <button class="check-btn" onclick="markDone(event,'q15')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          Curtailment is stopping some bars where they are no longer required by the bending moment diagram, reducing steel quantity.<br><br>
+          Rules:<br>
+          1. No bar may be cut where its theoretical cut-off lies in a tension zone unless extra stirrups are provided.<br>
+          2. Bars must extend beyond their theoretical cut-off by ≥ max(d, 12db).<br>
+          3. At least 1/3 of bottom bars must continue to support; at least 1/4 of top bars to mid-span.<br>
+          4. All bars must be anchored at supports for their full development length.<br><br>
+          In BIM, curtailment lengths are modeled exactly in 3D — Tekla can auto-generate curtailment based on bending moment envelope imported from analysis.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ BIM WORKFLOW ═══ -->
+  <div class="page" id="page-bim">
+    <div class="sec-header">
+      <div class="sec-title-wrap">
+        <div class="sec-eyebrow">// Section 03</div>
+        <h2 class="sec-h2">BIM <span>Workflow</span></h2>
+      </div>
+    </div>
+
+    <div class="wf-grid">
+      <div class="wf-step"><div class="wf-n">01</div><div class="wf-label">Structural Model</div><div class="wf-desc">Create concrete member geometry in Revit/Tekla. Define families, sections, materials.</div></div>
+      <div class="wf-step"><div class="wf-n">02</div><div class="wf-label">Analysis Link</div><div class="wf-desc">Export to ETABS/SAP2000/STAAD via direct link or IFC. Run structural analysis.</div></div>
+      <div class="wf-step"><div class="wf-n">03</div><div class="wf-label">Rebar Design</div><div class="wf-desc">Analysis outputs required steel areas. Engineer specifies bar sizes and spacing.</div></div>
+      <div class="wf-step"><div class="wf-n">04</div><div class="wf-label">3D Rebar Model</div><div class="wf-desc">Place rebar using Revit/Tekla tools. Assign cover, shape, spacing, hooks.</div></div>
+      <div class="wf-step"><div class="wf-n">05</div><div class="wf-label">Clash Detection</div><div class="wf-desc">Run Navisworks or built-in clash tests. Resolve rebar vs MEP conflicts.</div></div>
+      <div class="wf-step"><div class="wf-n">06</div><div class="wf-label">Drawings & BBS</div><div class="wf-desc">Auto-generate detail drawings and bar bending schedules from 3D model.</div></div>
+      <div class="wf-step"><div class="wf-n">07</div><div class="wf-label">Fabrication</div><div class="wf-desc">Export BVBS/IFC to rebar fabricators for CNC bending. Digital delivery.</div></div>
+    </div>
+
+    <div class="qa-list">
+      <div class="qa-card" data-diff="med" data-id="q07" data-section="BIM" data-question="What are LOD levels (Level of Development) for reinforcement in BIM?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 07</span>
+          <span class="qtxt">What are LOD levels (Level of Development) for reinforcement in BIM?</span>
+          <div class="badges"><span class="badge badge-med">MEDIUM</span></div>
+          <button class="check-btn" onclick="markDone(event,'q07')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          LOD defines how much information and geometric detail is included in a BIM element.<br><br>
+          <b>LOD 200:</b> Generic reinforcement — estimated quantities, no exact placement.<br>
+          <b>LOD 300:</b> Specific bar sizes, spacing, cover. Accurate for coordination and quantity takeoff.<br>
+          <b>LOD 350:</b> Full 3D rebar geometry including hooks, bends, lap lengths. Coordination with MEP and formwork.<br>
+          <b>LOD 400:</b> Fabrication-ready — exact bar marks, bending dimensions, shape codes, BBS output. CNC-compatible.<br>
+          <b>LOD 500:</b> As-built — verified against site installation, deviations documented.
+          <div class="tip">💡 Most structural BIM contracts require LOD 350 for coordination and LOD 400 for rebar fabrication packages.</div>
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="hard" data-id="q08" data-section="BIM" data-question="What is IFC and how does it relate to rebar in BIM?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 08</span>
+          <span class="qtxt">What is IFC and how does it relate to rebar in BIM?</span>
+          <div class="badges"><span class="badge badge-hard">ADVANCED</span></div>
+          <button class="check-btn" onclick="markDone(event,'q08')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          IFC (Industry Foundation Classes) is an open, vendor-neutral data exchange standard (ISO 16739). For reinforcement, the relevant IFC entities are:<br><br>
+          <span class="code">IfcReinforcingBar</span> — individual bar with diameter, surface, role (main/shear)<br>
+          <span class="code">IfcReinforcingMesh</span> — mesh fabric reinforcement<br>
+          <span class="code">IfcTendon</span> — post-tensioning tendons<br><br>
+          IFC4 improved reinforcement support significantly over IFC2x3. Tekla exports native IFC4 rebar; Revit requires specific IFC4 export settings to preserve bar properties correctly.
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="med" data-id="q09" data-section="BIM" data-question="Explain clash detection for rebar and how you resolve conflicts.">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 09</span>
+          <span class="qtxt">Explain clash detection for rebar and how you resolve conflicts.</span>
+          <div class="badges"><span class="badge badge-med">MEDIUM</span></div>
+          <button class="check-btn" onclick="markDone(event,'q09')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          Clash detection identifies physical interference between model elements. For rebar:<br><br>
+          <b>Hard clash:</b> Two rebar elements occupy same space. Must be resolved (shift bar, reduce diameter, adjust spacing).<br>
+          <b>Clearance clash:</b> Bars closer than required minimum clear distance (ACI: max(25mm, 1.33×aggregate, db)).<br>
+          <b>Rebar vs MEP:</b> Conduits/pipes routing through slabs or walls conflict with rebar layout.<br><br>
+          Resolution tools: Navisworks Manage, Revit's built-in interference check, Tekla's clash manager.<br><br>
+          Common strategies: stagger laps in congested zones, use smaller-diameter bars with closer spacing, coordinate MEP sleeves before rebar placement.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SOFTWARE ═══ -->
+  <div class="page" id="page-software">
+    <div class="sec-header">
+      <div class="sec-title-wrap">
+        <div class="sec-eyebrow">// Section 04</div>
+        <h2 class="sec-h2">Software <span>Q&A</span></h2>
+      </div>
+    </div>
+    <div class="qa-list">
+
+      <div class="qa-card" data-diff="easy" data-id="q16" data-section="Software" data-question="What are the main tools for 3D rebar modeling in Revit?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 16</span>
+          <span class="qtxt">What are the main tools for 3D rebar modeling in Revit?</span>
+          <div class="badges"><span class="badge badge-easy">EASY</span></div>
+          <button class="check-btn" onclick="markDone(event,'q16')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          Revit Structure provides: <span class="code">Rebar by Host</span> (sketch-based, follows host shape), <span class="code">Free-form Rebar</span> (curved/complex 3D paths), <span class="code">Area Reinforcement</span> (slabs, walls — auto-generates distributed bars), <span class="code">Path Reinforcement</span> (follows a path curve), <span class="code">Fabric Reinforcement</span> (mesh).<br><br>
+          Key settings: concrete cover via <span class="code">Structural Cover Settings</span>, bar shapes from <span class="code">Rebar Shape</span> family, hooks from <span class="code">Rebar Hook Type</span>.<br><br>
+          Third-party add-ins: BIM Associates, Agacad Tools4Revit, Ideate BIMLink for advanced rebar workflows.
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="med" data-id="q17" data-section="Software" data-question="How does Tekla Structures differ from Revit for rebar modeling?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 17</span>
+          <span class="qtxt">How does Tekla Structures differ from Revit for rebar modeling?</span>
+          <div class="badges"><span class="badge badge-med">MEDIUM</span></div>
+          <button class="check-btn" onclick="markDone(event,'q17')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          <b>Tekla Structures</b> is purpose-built for structural detailing and fabrication. Key advantages:<br>
+          — Superior rebar coverage: helix, poly-rebar, mesh, strand tendons all natively<br>
+          — Stronger BBS reporting and drawing customization<br>
+          — Direct CNC export via BVBS and XML for rebar fabricators<br>
+          — Better automation via applications and components (prebuilt detailing macros)<br>
+          — Open API (C#, .NET) for custom parametric detailing<br><br>
+          <b>Revit Structure</b> advantages:<br>
+          — Better multi-discipline coordination (arch, MEP in same model)<br>
+          — Tighter integration with Autodesk ecosystem (AutoCAD, Navisworks, BIM360)<br>
+          — Better for design-stage BIM, LOD 200–300<br><br>
+          Many firms use Revit for design coordination and Tekla for fabrication-level rebar detailing.
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="hard" data-id="q18" data-section="Software" data-question="How do you link a structural analysis model (ETABS/SAP2000) to Revit?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 18</span>
+          <span class="qtxt">How do you link a structural analysis model (ETABS/SAP2000) to Revit?</span>
+          <div class="badges"><span class="badge badge-hard">ADVANCED</span></div>
+          <button class="check-btn" onclick="markDone(event,'q18')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          The main method is the ETABS–Revit direct link using Autodesk's Structural Analysis Toolkit or CSI's built-in Revit link:<br><br>
+          1. In Revit, create the structural model with analytical elements visible.<br>
+          2. Export via <span class="code">File → Export → Structural Analysis Model</span> to .etabs or IFC analytical format.<br>
+          3. ETABS imports geometry, assigns materials and section properties, runs analysis.<br>
+          4. Import reactions/moments back to Revit for reporting.<br><br>
+          Alternative: <b>Autodesk Robot Structural Analysis</b> has native Revit bidirectional link. Changes in Revit update the analytical model and vice versa.<br><br>
+          Always reconcile analytical vs. physical model mismatches before export (offset elements, unjoined members).
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="med" data-id="q19" data-section="Software" data-question="How do you auto-generate rebar schedules/BBS from Revit?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 19</span>
+          <span class="qtxt">How do you auto-generate rebar schedules/BBS from Revit?</span>
+          <div class="badges"><span class="badge badge-med">MEDIUM</span></div>
+          <button class="check-btn" onclick="markDone(event,'q19')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          In Revit: <span class="code">View → Schedules → Schedule/Quantities</span>, category = Structural Rebar.<br><br>
+          Key fields: Family and Type, Bar Number/Mark, Diameter, Length, Quantity, Total Length, Weight per unit, Total Weight, Host, Shape Image.<br><br>
+          For BBS-style layout with shape sketches: use <span class="code">Rebar Shape Image</span> parameter in the schedule.<br><br>
+          Export options: directly to Excel via <span class="code">Export → Reports → Schedule</span>, or use Dynamo/API scripts for formatted BBS output to custom templates.<br><br>
+          Third-party: Agacad Rebar Schedule or BIM Associates provide more robust formatted BBS exports matching IS/BS shape code conventions.
+        </div>
+      </div>
+
+      <div class="qa-card" data-diff="hard" data-id="q20" data-section="Software" data-question="What is BVBS format and when is it used?">
+        <div class="qa-head" onclick="toggleCard(this)">
+          <span class="qnum">Q 20</span>
+          <span class="qtxt">What is BVBS format and when is it used?</span>
+          <div class="badges"><span class="badge badge-hard">ADVANCED</span></div>
+          <button class="check-btn" onclick="markDone(event,'q20')">✓</button>
+          <span class="toggle-btn">+</span>
+        </div>
+        <div class="qa-body">
+          BVBS is a digital file format for rebar fabrication data exchange between BIM software and CNC bending machines.<br><br>
+          Contains for each bar: Position mark, diameter, steel grade, quantity, total length, bending dimensions (a–g), angle values, hook types.<br><br>
+          Used by fabricators to directly program CNC rebar bending machines — eliminates manual data re-entry and reduces fabrication errors significantly.<br><br>
+          Tekla Structures has native BVBS export. Revit requires a third-party add-in or API export. CNC machines from MEP, Schnell, EVG read BVBS files directly.<br><br>
+          This is a key value proposition of LOD 400 rebar BIM — digital model to machine, zero manual transcription.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ DIAGRAMS ═══ -->
+  <div class="page" id="page-diagrams">
+    <div class="sec-header">
+      <div class="sec-title-wrap">
+        <div class="sec-eyebrow">// Section 05</div>
+        <h2 class="sec-h2">Visual <span>Diagrams</span></h2>
+      </div>
+    </div>
+    <div class="diag-grid">
+
+      <div class="diag-card">
+        <div class="diag-label">Beam Cross-Section</div>
+        <svg width="100%" viewBox="0 0 300 240" style="background:#0d1420;border-radius:4px">
+          <rect x="30" y="20" width="240" height="200" fill="#172032" stroke="#2a3a52" stroke-width="2" rx="3"/>
+          <rect x="55" y="45" width="190" height="150" fill="none" stroke="rgba(224,92,75,0.2)" stroke-width="1" stroke-dasharray="4,3"/>
+          <rect x="58" y="48" width="184" height="144" fill="none" stroke="#e05c4b" stroke-width="2.5" rx="2"/>
+          <line x1="58" y1="48" x2="58" y2="36" stroke="#e05c4b" stroke-width="2.5"/>
+          <line x1="58" y1="36" x2="72" y2="36" stroke="#e05c4b" stroke-width="2.5"/>
+          <circle cx="90" cy="168" r="9" fill="#c0392b" stroke="#e05c4b" stroke-width="1.5"/>
+          <circle cx="150" cy="168" r="9" fill="#c0392b" stroke="#e05c4b" stroke-width="1.5"/>
+          <circle cx="210" cy="168" r="9" fill="#c0392b" stroke="#e05c4b" stroke-width="1.5"/>
+          <circle cx="90" cy="62" r="7" fill="#8b2318" stroke="#e05c4b" stroke-width="1"/>
+          <circle cx="210" cy="62" r="7" fill="#8b2318" stroke="#e05c4b" stroke-width="1"/>
+          <text x="152" y="196" text-anchor="middle" fill="#f5a623" font-size="9">3× MAIN BOTTOM BARS (TENSION)</text>
+          <text x="152" y="52" text-anchor="middle" fill="#3ecf8e" font-size="9">TOP BARS (COMPRESSION/HANGER)</text>
+          <line x1="30" y1="130" x2="56" y2="130" stroke="#7c8fa8" stroke-width="1"/>
+          <text x="43" y="126" text-anchor="middle" fill="#7c8fa8" font-size="8">COVER</text>
+          <text x="23" y="122" fill="#e05c4b" font-size="8" transform="rotate(-90,23,122)">STIRRUP</text>
+          <line x1="30" y1="228" x2="270" y2="228" stroke="#7c8fa8" stroke-width="1"/>
+          <text x="150" y="240" text-anchor="middle" fill="#7c8fa8" font-size="9">BREADTH (b)</text>
+          <line x1="282" y1="20" x2="282" y2="220" stroke="#7c8fa8" stroke-width="1"/>
+          <text x="300" y="125" text-anchor="middle" fill="#7c8fa8" font-size="9" transform="rotate(90,300,125)">DEPTH (D)</text>
+        </svg>
+      </div>
+
+      <div class="diag-card">
+        <div class="diag-label">Two-Way Slab Reinforcement</div>
+        <svg width="100%" viewBox="0 0 300 240" style="background:#0d1420;border-radius:4px">
+          <rect x="20" y="20" width="260" height="200" fill="#172032" stroke="#2a3a52" stroke-width="2" rx="2"/>
+          <g stroke="#e05c4b" stroke-width="2.5" opacity="0.9">
+            <line x1="30" y1="50" x2="270" y2="50"/><line x1="30" y1="78" x2="270" y2="78"/>
+            <line x1="30" y1="106" x2="270" y2="106"/><line x1="30" y1="134" x2="270" y2="134"/>
+            <line x1="30" y1="162" x2="270" y2="162"/><line x1="30" y1="190" x2="270" y2="190"/>
+            <line x1="30" y1="210" x2="270" y2="210"/>
+          </g>
+          <g stroke="#f5a623" stroke-width="1.8" opacity="0.75">
+            <line x1="52" y1="28" x2="52" y2="218"/><line x1="88" y1="28" x2="88" y2="218"/>
+            <line x1="124" y1="28" x2="124" y2="218"/><line x1="160" y1="28" x2="160" y2="218"/>
+            <line x1="196" y1="28" x2="196" y2="218"/><line x1="232" y1="28" x2="232" y2="218"/>
+            <line x1="263" y1="28" x2="263" y2="218"/>
+          </g>
+          <g fill="#fff" opacity="0.35">
+            <circle cx="52" cy="50" r="2.5"/><circle cx="88" cy="50" r="2.5"/><circle cx="124" cy="50" r="2.5"/>
+            <circle cx="160" cy="50" r="2.5"/><circle cx="52" cy="78" r="2.5"/><circle cx="88" cy="78" r="2.5"/>
+            <circle cx="124" cy="78" r="2.5"/><circle cx="160" cy="106" r="2.5"/>
+          </g>
+          <line x1="28" y1="228" x2="58" y2="228" stroke="#e05c4b" stroke-width="2"/>
+          <text x="64" y="232" fill="#e05c4b" font-size="9">MAIN BARS (X-DIR)</text>
+          <line x1="160" y1="228" x2="190" y2="228" stroke="#f5a623" stroke-width="2"/>
+          <text x="196" y="232" fill="#f5a623" font-size="9">DIST. BARS (Y-DIR)</text>
+        </svg>
+      </div>
+
+      <div class="diag-card">
+        <div class="diag-label">Column Section &amp; Ties</div>
+        <svg width="100%" viewBox="0 0 300 240" style="background:#0d1420;border-radius:4px">
+          <rect x="60" y="28" width="180" height="184" fill="#172032" stroke="#2a3a52" stroke-width="2" rx="4"/>
+          <rect x="82" y="50" width="136" height="140" fill="none" stroke="rgba(224,92,75,0.2)" stroke-width="1" stroke-dasharray="3,3"/>
+          <rect x="85" y="53" width="130" height="134" fill="none" stroke="#e05c4b" stroke-width="2.5" rx="2"/>
+          <polygon points="150,63 210,120 150,175 90,120" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.5"/>
+          <circle cx="97" cy="66" r="10" fill="#c0392b" stroke="#e05c4b" stroke-width="1.5"/>
+          <circle cx="203" cy="66" r="10" fill="#c0392b" stroke="#e05c4b" stroke-width="1.5"/>
+          <circle cx="97" cy="174" r="10" fill="#c0392b" stroke="#e05c4b" stroke-width="1.5"/>
+          <circle cx="203" cy="174" r="10" fill="#c0392b" stroke="#e05c4b" stroke-width="1.5"/>
+          <circle cx="150" cy="66" r="8" fill="#8b2318" stroke="#e05c4b" stroke-width="1"/>
+          <circle cx="150" cy="174" r="8" fill="#8b2318" stroke="#e05c4b" stroke-width="1"/>
+          <circle cx="97" cy="120" r="8" fill="#8b2318" stroke="#e05c4b" stroke-width="1"/>
+          <circle cx="203" cy="120" r="8" fill="#8b2318" stroke="#e05c4b" stroke-width="1"/>
+          <text x="150" y="222" text-anchor="middle" fill="#7c8fa8" font-size="9">8-BAR COLUMN ARRANGEMENT</text>
+          <line x1="60" y1="100" x2="83" y2="100" stroke="#7c8fa8" stroke-width="1"/>
+          <text x="50" y="103" text-anchor="end" fill="#7c8fa8" font-size="8">COV.</text>
+          <text x="220" y="52" fill="#f5a623" font-size="8">135° HOOK</text>
+          <text x="220" y="62" fill="#f5a623" font-size="8">(SEISMIC)</text>
+        </svg>
+      </div>
+
+      <div class="diag-card">
+        <div class="diag-label">LOD Progression</div>
+        <svg width="100%" viewBox="0 0 300 240" style="background:#0d1420;border-radius:4px">
+          <defs><marker id="arrowR" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4 Z" fill="#7c8fa8"/></marker></defs>
+          <rect x="10" y="30" width="55" height="28" fill="#1c2333" stroke="#2a3a52" stroke-width="1" rx="2"/>
+          <text x="37" y="48" text-anchor="middle" fill="#7c8fa8" font-size="10">LOD 200</text>
+          <line x1="15" y1="74" x2="62" y2="74" stroke="#7c8fa8" stroke-width="1.5" stroke-dasharray="5,2"/>
+          <line x1="15" y1="81" x2="62" y2="81" stroke="#7c8fa8" stroke-width="1.5" stroke-dasharray="5,2"/>
+          <text x="37" y="98" text-anchor="middle" fill="#7c8fa8" font-size="8">Generic</text>
+
+          <rect x="73" y="30" width="55" height="28" fill="#1c2333" stroke="#3ecf8e" stroke-width="1" rx="2"/>
+          <text x="100" y="48" text-anchor="middle" fill="#3ecf8e" font-size="10">LOD 300</text>
+          <g stroke="#8b2318" stroke-width="1.5"><line x1="76" y1="72" x2="125" y2="72"/><line x1="76" y1="79" x2="125" y2="79"/><line x1="76" y1="86" x2="125" y2="86"/></g>
+          <text x="100" y="103" text-anchor="middle" fill="#3ecf8e" font-size="8">Size &amp; Spacing</text>
+
+          <rect x="136" y="30" width="55" height="28" fill="#1c2333" stroke="#f5a623" stroke-width="1" rx="2"/>
+          <text x="163" y="48" text-anchor="middle" fill="#f5a623" font-size="10">LOD 350</text>
+          <g stroke="#c0392b" stroke-width="2"><line x1="139" y1="72" x2="188" y2="72"/><line x1="139" y1="79" x2="188" y2="79"/><line x1="139" y1="86" x2="188" y2="86"/><line x1="148" y1="69" x2="148" y2="89"/><line x1="163" y1="69" x2="163" y2="89"/><line x1="178" y1="69" x2="178" y2="89"/></g>
+          <text x="163" y="103" text-anchor="middle" fill="#f5a623" font-size="8">Full 3D + Hooks</text>
+
+          <rect x="199" y="30" width="88" height="28" fill="#1c2333" stroke="#e05c4b" stroke-width="2" rx="2"/>
+          <text x="243" y="48" text-anchor="middle" fill="#e05c4b" font-size="10">LOD 400</text>
+          <g stroke="#c0392b" stroke-width="2"><line x1="202" y1="72" x2="282" y2="72"/><line x1="202" y1="79" x2="282" y2="79"/><line x1="202" y1="86" x2="282" y2="86"/><line x1="210" y1="69" x2="210" y2="89"/><line x1="226" y1="69" x2="226" y2="89"/><line x1="244" y1="69" x2="244" y2="89"/><line x1="260" y1="69" x2="260" y2="89"/><line x1="278" y1="69" x2="278" y2="89"/></g>
+          <path d="M282,72 Q290,72 290,79" stroke="#c0392b" stroke-width="2" fill="none"/>
+          <text x="243" y="105" text-anchor="middle" fill="#e05c4b" font-size="8">Fabrication + BBS</text>
+
+          <line x1="15" y1="150" x2="285" y2="150" stroke="#7c8fa8" stroke-width="1" marker-end="url(#arrowR)"/>
+          <text x="150" y="168" text-anchor="middle" fill="#7c8fa8" font-size="10">INCREASING DETAIL &amp; INFORMATION</text>
+          <text x="150" y="196" text-anchor="middle" fill="#7c8fa8" font-size="9">LOD 200 → 300 → 350 → 400 → 500 (As-Built)</text>
+        </svg>
+      </div>
+
+      <div class="diag-card">
+        <div class="diag-label">Lap &amp; Development Length</div>
+        <svg width="100%" viewBox="0 0 300 200" style="background:#0d1420;border-radius:4px">
+          <rect x="10" y="55" width="30" height="110" fill="#1c2333" stroke="#2a3a52" stroke-width="2" rx="2"/>
+          <text x="25" y="115" text-anchor="middle" fill="#7c8fa8" font-size="9" transform="rotate(-90,25,115)">SUPPORT</text>
+          <rect x="40" y="80" width="160" height="16" fill="#c0392b" rx="3"/>
+          <rect x="120" y="104" width="160" height="16" fill="#8b2318" rx="3"/>
+          <rect x="120" y="75" width="60" height="51" fill="rgba(245,166,35,0.1)" stroke="#f5a623" stroke-width="1" stroke-dasharray="4,2" rx="2"/>
+          <text x="150" y="140" text-anchor="middle" fill="#f5a623" font-size="9">LAP ZONE ≈ 50×db</text>
+          <line x1="120" y1="70" x2="180" y2="70" stroke="#f5a623" stroke-width="1"/>
+          <line x1="120" y1="66" x2="120" y2="74" stroke="#f5a623" stroke-width="1"/>
+          <line x1="180" y1="66" x2="180" y2="74" stroke="#f5a623" stroke-width="1"/>
+          <line x1="40" y1="50" x2="200" y2="50" stroke="#3ecf8e" stroke-width="1"/>
+          <line x1="40" y1="46" x2="40" y2="54" stroke="#3ecf8e" stroke-width="1"/>
+          <line x1="200" y1="46" x2="200" y2="54" stroke="#3ecf8e" stroke-width="1"/>
+          <text x="120" y="46" text-anchor="middle" fill="#3ecf8e" font-size="9">DEVELOPMENT LENGTH (Ld)</text>
+          <path d="M280,112 Q292,112 292,124 L292,136" stroke="#8b2318" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <text x="285" y="155" text-anchor="middle" fill="#7c8fa8" font-size="8">90° HOOK</text>
+          <text x="75" y="94" text-anchor="middle" fill="#e05c4b" font-size="9">BAR 1</text>
+          <text x="225" y="118" text-anchor="middle" fill="#c0392b" font-size="9">BAR 2</text>
+          <text x="150" y="185" text-anchor="middle" fill="#7c8fa8" font-size="9">STAGGER LAPS — MAX 50% AT ANY SECTION</text>
+        </svg>
+      </div>
+
+      <div class="diag-card">
+        <div class="diag-label">BIM Software Ecosystem</div>
+        <svg width="100%" viewBox="0 0 300 240" style="background:#0d1420;border-radius:4px">
+          <ellipse cx="150" cy="120" rx="45" ry="30" fill="#1c2333" stroke="#e05c4b" stroke-width="2"/>
+          <text x="150" y="116" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold">BIM</text>
+          <text x="150" y="130" text-anchor="middle" fill="#fff" font-size="10">MODEL</text>
+          <rect x="5" y="10" width="82" height="26" rx="3" fill="#172032" stroke="#3ecf8e" stroke-width="1.5"/>
+          <text x="46" y="27" text-anchor="middle" fill="#3ecf8e" font-size="10">ETABS / SAP2000</text>
+          <line x1="87" y1="23" x2="115" y2="100" stroke="#3ecf8e" stroke-width="1" stroke-dasharray="4,2"/>
+          <rect x="213" y="10" width="82" height="26" rx="3" fill="#172032" stroke="#4d9ef7" stroke-width="1.5"/>
+          <text x="254" y="27" text-anchor="middle" fill="#4d9ef7" font-size="10">REVIT STRUCT.</text>
+          <line x1="213" y1="23" x2="188" y2="100" stroke="#4d9ef7" stroke-width="1" stroke-dasharray="4,2"/>
+          <rect x="5" y="107" width="82" height="26" rx="3" fill="#172032" stroke="#f5a623" stroke-width="1.5"/>
+          <text x="46" y="124" text-anchor="middle" fill="#f5a623" font-size="10">TEKLA STRUCT.</text>
+          <line x1="87" y1="120" x2="105" y2="120" stroke="#f5a623" stroke-width="1" stroke-dasharray="4,2"/>
+          <rect x="213" y="107" width="82" height="26" rx="3" fill="#172032" stroke="#e05c4b" stroke-width="1.5"/>
+          <text x="254" y="119" text-anchor="middle" fill="#e05c4b" font-size="9">NAVISWORKS</text>
+          <text x="254" y="129" text-anchor="middle" fill="#e05c4b" font-size="9">CLASH CHECK</text>
+          <line x1="213" y1="120" x2="195" y2="120" stroke="#e05c4b" stroke-width="1" stroke-dasharray="4,2"/>
+          <rect x="5" y="200" width="82" height="26" rx="3" fill="#172032" stroke="#7c8fa8" stroke-width="1.5"/>
+          <text x="46" y="217" text-anchor="middle" fill="#7c8fa8" font-size="10">AutoCAD / 2D</text>
+          <line x1="87" y1="213" x2="120" y2="143" stroke="#7c8fa8" stroke-width="1" stroke-dasharray="4,2"/>
+          <rect x="213" y="200" width="82" height="26" rx="3" fill="#172032" stroke="#9b59b6" stroke-width="1.5"/>
+          <text x="254" y="212" text-anchor="middle" fill="#bb8fce" font-size="9">CNC FABRICATION</text>
+          <text x="254" y="222" text-anchor="middle" fill="#bb8fce" font-size="9">BVBS / IFC</text>
+          <line x1="213" y1="213" x2="180" y2="143" stroke="#9b59b6" stroke-width="1" stroke-dasharray="4,2"/>
+          <text x="150" y="175" text-anchor="middle" fill="#7c8fa8" font-size="9">IFC / API EXCHANGE</text>
+        </svg>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ TABLES ═══ -->
+  <div class="page" id="page-tables">
+    <div class="sec-header">
+      <div class="sec-title-wrap">
+        <div class="sec-eyebrow">// Section 06</div>
+        <h2 class="sec-h2">Reference <span>Tables</span></h2>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <div class="tbl-title">Bar Sizes – Area &amp; Weight</div>
+      <table>
+        <tr><th>Dia (mm)</th><th>Area (mm²)</th><th>Weight (kg/m)</th><th>Typical Use</th><th>Revit Type</th></tr>
+        <tr><td>6</td><td>28.3</td><td>0.222</td><td>Stirrups, spacers</td><td>06M / T6</td></tr>
+        <tr><td>8</td><td>50.3</td><td>0.395</td><td>Slab distribution, links</td><td>08M / T8</td></tr>
+        <tr><td>10</td><td>78.5</td><td>0.617</td><td>Slab main bars, wall reinf.</td><td>10M / T10</td></tr>
+        <tr><td>12</td><td>113.1</td><td>0.888</td><td>Slab main, beam secondary</td><td>12M / T12</td></tr>
+        <tr><td>16</td><td>201.1</td><td>1.578</td><td>Beam main bars, columns</td><td>16M / T16</td></tr>
+        <tr><td>20</td><td>314.2</td><td>2.466</td><td>Beam/column main bars</td><td>20M / T20</td></tr>
+        <tr><td>25</td><td>490.9</td><td>3.853</td><td>Column/beam primary</td><td>25M / T25</td></tr>
+        <tr><td>32</td><td>804.2</td><td>6.313</td><td>Heavy columns, transfer beams</td><td>32M / T32</td></tr>
+        <tr><td>40</td><td>1256.6</td><td>9.865</td><td>Pile caps, heavy foundations</td><td>40M / T40</td></tr>
+      </table>
+    </div>
+
+    <div class="tbl-wrap">
+      <div class="tbl-title">Concrete Cover Requirements</div>
+      <table>
+        <tr><th>Member</th><th>Exposure</th><th>IS 456 (mm)</th><th>ACI 318 (mm)</th></tr>
+        <tr><td>Slab</td><td>Internal, mild</td><td>20</td><td>20</td></tr>
+        <tr><td>Beam</td><td>Internal</td><td>25</td><td>40</td></tr>
+        <tr><td>Column</td><td>Internal</td><td>40</td><td>40</td></tr>
+        <tr><td>Foundation</td><td>In contact with soil</td><td>50</td><td>75</td></tr>
+        <tr><td>External exposed</td><td>Moderate</td><td>30–45</td><td>50</td></tr>
+        <tr><td>Marine / Coastal</td><td>Severe</td><td>50–75</td><td>60–75</td></tr>
+      </table>
+    </div>
+
+    <div class="tbl-wrap">
+      <div class="tbl-title">Bar Shape Codes (IS SP:34 / BS 8666)</div>
+      <table>
+        <tr><th>Shape Code</th><th>Description</th><th>Bending Details</th><th>Common Use</th></tr>
+        <tr><td>00</td><td>Straight bar</td><td>Length only</td><td>Main bars, columns</td></tr>
+        <tr><td>11</td><td>L-shape (1 bend)</td><td>a + b</td><td>Crank bars, corner ties</td></tr>
+        <tr><td>21</td><td>U-shape (2 bends)</td><td>a + b + c</td><td>Stirrups, open links</td></tr>
+        <tr><td>38</td><td>Closed rectangle (4 bends)</td><td>a + b, perimeter</td><td>Column ties, beam stirrups</td></tr>
+        <tr><td>13</td><td>Cranked bar (2 diagonal bends)</td><td>a + b + c</td><td>Slab bars at supports</td></tr>
+        <tr><td>67</td><td>Helix</td><td>Pitch, turns, diameter</td><td>Pile spiral, circular columns</td></tr>
+      </table>
+    </div>
+
+    <div class="tbl-wrap">
+      <div class="tbl-title">Development Length Multipliers (Fe500 / Gr.60)</div>
+      <table>
+        <tr><th>Grade</th><th>fck (MPa)</th><th>Tension Ld (×db)</th><th>Compression Ld (×db)</th><th>Lap Length (×db)</th></tr>
+        <tr><td>M20 / 3000 psi</td><td>20</td><td>56</td><td>45</td><td>70</td></tr>
+        <tr><td>M25 / 3500 psi</td><td>25</td><td>50</td><td>40</td><td>62</td></tr>
+        <tr><td>M30 / 4000 psi</td><td>30</td><td>45</td><td>36</td><td>56</td></tr>
+        <tr><td>M35 / 5000 psi</td><td>35</td><td>42</td><td>34</td><td>52</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ GLOSSARY ═══ -->
+  <div class="page" id="page-glossary">
+    <div class="sec-header">
+      <div class="sec-title-wrap">
+        <div class="sec-eyebrow">// Section 07</div>
+        <h2 class="sec-h2">Key <span>Glossary</span></h2>
+      </div>
+    </div>
+    <div class="gloss-grid">
+      <div class="gloss-card"><div class="gloss-term">As,min / As,max</div><div class="gloss-def">Minimum and maximum allowable steel area in a cross-section to ensure ductile behavior without brittle failure.</div></div>
+      <div class="gloss-card"><div class="gloss-term">BBS</div><div class="gloss-def">Bar Bending Schedule — tabular document listing all bars with shape, size, and bending dimensions for fabrication.</div></div>
+      <div class="gloss-card"><div class="gloss-term">BVBS</div><div class="gloss-def">Digital rebar fabrication file format for direct CNC machine input. Exported from Tekla and other BIM tools.</div></div>
+      <div class="gloss-card"><div class="gloss-term">Clear Cover</div><div class="gloss-def">Minimum distance from the outermost rebar surface to the concrete face. Provides fire and corrosion protection.</div></div>
+      <div class="gloss-card"><div class="gloss-term">Clash Detection</div><div class="gloss-def">BIM process of identifying physical conflicts between model elements such as rebar vs MEP, or rebar vs rebar.</div></div>
+      <div class="gloss-card"><div class="gloss-term">Cranked Bar</div><div class="gloss-def">Bar bent diagonally to shift position — used to transition from bottom to top reinforcement zone in slabs.</div></div>
+      <div class="gloss-card"><div class="gloss-term">Curtailment</div><div class="gloss-def">Stopping bars where they are no longer required by the bending moment diagram, reducing steel quantity.</div></div>
+      <div class="gloss-card"><div class="gloss-term">Development Length</div><div class="gloss-def">Minimum bar embedment needed to develop full bar yield strength through bond with surrounding concrete.</div></div>
+      <div class="gloss-card"><div class="gloss-term">IFC</div><div class="gloss-def">Industry Foundation Classes — open BIM data exchange standard (ISO 16739). Includes IfcReinforcingBar entity.</div></div>
+      <div class="gloss-card"><div class="gloss-term">Lap Length / Splice</div><div class="gloss-def">Length over which two bars overlap to transfer forces where bars cannot be made continuous.</div></div>
+      <div class="gloss-card"><div class="gloss-term">LOD</div><div class="gloss-def">Level of Development — defines geometric detail and information content in a BIM element (LOD 200 to 500).</div></div>
+      <div class="gloss-card"><div class="gloss-term">Main Bar</div><div class="gloss-def">Primary longitudinal reinforcement placed in the tension zone of a structural member to resist bending.</div></div>
+      <div class="gloss-card"><div class="gloss-term">Rebar Host</div><div class="gloss-def">In Revit, the concrete element (beam, slab, column) that contains rebar. Rebar is modeled within the host geometry.</div></div>
+      <div class="gloss-card"><div class="gloss-term">Shear Link / Stirrup</div><div class="gloss-def">Transverse closed bar loop in beams/columns to resist shear forces and confine the concrete core.</div></div>
+      <div class="gloss-card"><div class="gloss-term">Shape Code</div><div class="gloss-def">Standard code (SP:34 India, BS 8666 UK) identifying bar bending shape for BBS documentation and fabrication.</div></div>
+      <div class="gloss-card"><div class="gloss-term">Steel Ratio (ρ)</div><div class="gloss-def">Ratio of steel area to gross concrete area. ρ = As / (b × d). Must be within code-specified min/max limits.</div></div>
+      <div class="gloss-card"><div class="gloss-term">Tekla Structures</div><div class="gloss-def">BIM software by Trimble specialized in structural steel and concrete rebar modeling at fabrication level (LOD 400).</div></div>
+      <div class="gloss-card"><div class="gloss-term">Transverse Reinforcement</div><div class="gloss-def">Bars placed perpendicular to main bars — stirrups in beams, ties in columns, distribution bars in slabs.</div></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ─── DATA ───
+const allQuestions = [];
+document.querySelectorAll('.qa-card').forEach(c => {
+  allQuestions.push({
+    id: c.dataset.id,
+    section: c.dataset.section,
+    question: c.dataset.question,
+    diff: c.dataset.diff,
+    page: c.closest('.page').id.replace('page-','')
+  });
+});
+
+// ─── PROGRESS ───
+let studied = JSON.parse(localStorage.getItem('rebarbim_studied') || '[]');
+
+function updateProgress() {
+  const count = studied.length;
+  document.getElementById('progressCount').textContent = count;
+  document.getElementById('studiedStat').textContent = count;
+  // Update check buttons
+  document.querySelectorAll('.qa-card').forEach(c => {
+    if (studied.includes(c.dataset.id)) {
+      c.classList.add('done');
+    } else {
+      c.classList.remove('done');
+    }
+  });
+}
+
+function markDone(e, id) {
+  e.stopPropagation();
+  if (studied.includes(id)) {
+    studied = studied.filter(x => x !== id);
+  } else {
+    studied.push(id);
+  }
+  localStorage.setItem('rebarbim_studied', JSON.stringify(studied));
+  updateProgress();
+}
+
+// ─── NAV ───
+function showPage(pageId, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (navEl) {
+    navEl.classList.add('active');
+  } else {
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+pageId+"'")) {
+        n.classList.add('active');
+      }
+    });
+  }
+  const titles = {
+    home:'Dashboard', basics:'Foundational Basics', detailing:'Rebar Detailing',
+    bim:'BIM Workflow', software:'Software Q&A', diagrams:'Diagrams',
+    tables:'Reference Tables', glossary:'Glossary'
+  };
+  document.getElementById('topbarTitle').textContent = titles[pageId] || pageId;
+  // close sidebar on mobile
+  if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+}
+
+// ─── TOGGLE Q&A ───
+function toggleCard(head) {
+  const card = head.closest('.qa-card');
+  card.classList.toggle('open');
+}
+
+// ─── FILTER ───
+function filterCards(btn, diff) {
+  const list = btn.closest('.page').querySelectorAll('.qa-card');
+  btn.closest('.filter-bar').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  list.forEach(card => {
+    if (diff === 'all' || card.dataset.diff === diff) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+// ─── SEARCH ───
+function handleSearch(val) {
+  const overlay = document.getElementById('searchResults');
+  const body = document.getElementById('srBody');
+  if (!val.trim()) { overlay.classList.remove('show'); return; }
+  overlay.classList.add('show');
+  const q = val.toLowerCase();
+  const matches = allQuestions.filter(x =>
+    x.question.toLowerCase().includes(q) || x.section.toLowerCase().includes(q)
+  );
+  if (!matches.length) {
+    body.innerHTML = '<div class="sr-empty">No results for "' + val + '"</div>';
+    return;
+  }
+  body.innerHTML = matches.map(m => `
+    <div class="sr-item" onclick="goToQuestion('${m.page}','${m.id}')">
+      <div class="sr-q">${m.question}</div>
+      <div class="sr-ctx">${m.section} · ${m.diff}</div>
+    </div>
+  `).join('');
+}
+
+function goToQuestion(page, id) {
+  closeSearch();
+  showPage(page, null);
+  setTimeout(() => {
+    const card = document.querySelector(`[data-id="${id}"]`);
+    if (card) {
+      card.scrollIntoView({behavior:'smooth', block:'center'});
+      card.classList.add('open');
+    }
+  }, 200);
+}
+
+function closeSearch() {
+  document.getElementById('searchResults').classList.remove('show');
+  document.getElementById('searchInput').value = '';
+}
+
+// ─── SIDEBAR MOBILE ───
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ─── LAST UPDATED ───
+document.getElementById('lastUpdated').textContent = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+
+// ─── INIT ───
+updateProgress();
+</script>
+</body>
+</html>
